@@ -1,5 +1,5 @@
 {
-    "name": "cerpus/versionclient",
+    "name": "cerpus/version-client",
     "description": "Library to communicate with the versioning API",
     "type": "Laravel package",
     "authors": [
