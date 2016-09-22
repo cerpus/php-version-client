@@ -1,6 +1,7 @@
 {
     "name": "cerpus/versionclient",
     "description": "Library to communicate with the versioning API",
+    "type": "Laravel package",
     "authors": [
         {
             "name": "Thomas Horn Sivertsen",
@@ -13,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Cerpus\\VersionClient\\": "packages/cerpus/version-client/src"
+            "Cerpus\\VersionClient\\": "src/"
         }
     }
 }
