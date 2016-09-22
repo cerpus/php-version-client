@@ -1,0 +1,19 @@
+{
+    "name": "cerpus/versionclient",
+    "description": "Library to communicate with the versioning API",
+    "authors": [
+        {
+            "name": "Thomas Horn Sivertsen",
+            "email": "thomass@cerpus.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "guzzlehttp/guzzle": "^6.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cerpus\\VersionClient\\": "packages/cerpus/version-client/src"
+        }
+    }
+}
