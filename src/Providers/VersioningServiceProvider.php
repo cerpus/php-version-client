@@ -1,6 +1,6 @@
 <?php
 
-namespace Cerpus\Versioning\Providers;
+namespace Cerpus\VersionClient\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
