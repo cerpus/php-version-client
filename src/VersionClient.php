@@ -26,17 +26,20 @@ class VersionClient implements VersionClientInterface
 
     protected $responseData;
 
-    protected $error;
+    protected $error = null;
 
-    public function __construct()
+    protected $message = null;
+
+    public function __construct($key = null, $secret = null, $server = null)
     {
-        $this->oauthKey = $this->getConfig("versionClient.oauthkey"); //$oauthKey;
-        $this->oauthSecret = $this->getConfig("versionClient.oauthsecret"); //$oauthSecret;
-        $this->versionServer = $this->getConfig("versionClient.versionserver"); //$oauthSecret;
+        $this->oauthKey = is_null($key) ? $this->getConfig("versionClient.oauthkey") : $key; //$oauthKey;
+        $this->oauthSecret = is_null($secret) ? $this->getConfig("versionClient.oauthsecret") : $secret; //$oauthSecret;
+        $this->versionServer = is_null($server) ? $this->getConfig("versionClient.versionserver") : $server; //$oauthServer;
         $this->verifyConfig();
     }
 
-    public function getConfig($key){
+    public function getConfig($key)
+    {
         return config($key);
     }
 
@@ -62,7 +65,7 @@ class VersionClient implements VersionClientInterface
                 $licenseClient = new Client(['base_uri' => $this->versionServer]);
                 $authResponse = $licenseClient->get(self::AUTH_SERVICE);
                 $authJson = json_decode($authResponse->getBody());
-                if( is_object($authJson) && property_exists($authJson, "url")){
+                if (is_object($authJson) && property_exists($authJson, "url")) {
                     $authUrl = $authJson->url;
                 } else {
                     $authUrl = current($authJson);
@@ -83,7 +86,7 @@ class VersionClient implements VersionClientInterface
                 $this->oauthToken = $oauthJson->access_token;
                 \Cache::put($tokenName, $this->oauthToken, 3);
             } catch (\Exception $e) {
-                \Log::error(__METHOD__. ': Unable to get token: URL: '.$authUrl.'. Wrong key/secret?');
+                \Log::error(__METHOD__ . ': Unable to get token: URL: ' . $authUrl . '. Wrong key/secret?');
                 return false;
             }
         }
@@ -91,7 +94,8 @@ class VersionClient implements VersionClientInterface
         return $this->oauthToken;
     }
 
-    protected function getClient(){
+    protected function getClient()
+    {
         return new Client(['base_uri' => $this->versionServer]);
     }
 
@@ -118,8 +122,8 @@ class VersionClient implements VersionClientInterface
 
                 return false;
             }
-        } catch (ClientException $clientException){
-            if( $clientException->hasResponse()){
+        } catch (ClientException $clientException) {
+            if ($clientException->hasResponse()) {
                 $error = $clientException->getResponse();
                 $this->error = json_decode($error->getBody()->getContents());
             }
@@ -134,11 +138,12 @@ class VersionClient implements VersionClientInterface
     public function createVersion(VersionDataInterface $resourceData)
     {
         $this->resourceData = $resourceData;
-        try{
+        try {
             /** @var Stream $responseStream */
             $responseStream = $this->doRequest(self::CREATE_VERSION, $resourceData, "POST");
             $this->responseData = json_decode($responseStream);
-        } catch (\Exception $exception){
+            // Handle json decode error(s)?
+        } catch (\Exception $exception) {
             return false;
         }
 
@@ -147,7 +152,48 @@ class VersionClient implements VersionClientInterface
 
     public function getVersion($versionId)
     {
-        // TODO: Implement getVersion() method.
+        $versionData = false;
+        try {
+            $endPoint = str_replace('%s', self::GET_VERSION_DATA, $versionId);
+            $responseStream = $this->doRequest($endPoint, [], "GET");
+            $responseJson = json_decode($responseStream);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->error = json_last_error_msg();
+                return false;
+            }
+
+            if (!$this->verifyResponseJson($responseJson)) {
+                $this->message = "Error validating response json";
+                return false;
+            }
+            $success = ($responseJson->type === 'success');
+
+            if (!$success) {
+                $this->error = $responseJson->errors;
+                $this->message = $responseJson->message;
+                return false;
+            }
+
+            $versionData = new VersionData(); // Can we use the Laravel Service Container to resolve this?
+            $receivedData = $responseJson->data;
+            $versionData->setExternalReference($receivedData->externalReference);
+            $versionData->setExternalUrl($receivedData->externalUrl);
+            $versionData->setExternalSystem($receivedData->externalSystem);
+            $versionData->setId($receivedData->id);
+            $versionData->setParent($receivedData->parent);
+            $versionData->setChildren($receivedData->children);
+            $versionData->setCoreId($receivedData->coreId);
+            $versionData->setVersionPurpose($receivedData->versionPurpose);
+            $versionData->setOriginReference($receivedData->originReference);
+            $versionData->setOriginSystem($receivedData->originSystem);
+            $versionData->setUserId($receivedData->userId);
+
+        } catch (\Exception $e) {
+            $this->error = $e->getMessage();
+            return false;
+        }
+
+        return $versionData;
     }
 
     public function getVersionsFromOrigin($originSystem, $originReference)
@@ -158,5 +204,26 @@ class VersionClient implements VersionClientInterface
     public function getVersionId()
     {
         return !empty($this->responseData->data->id) ? $this->responseData->data->id : null;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    public function getMessage()
+    {
+        return $this->message;
+    }
+
+    protected function verifyResponseJson($json)
+    {
+        return property_exists($json, 'data')
+        && property_exists($json, 'errors')
+        && property_exists($json, 'type')
+        && property_exists($json, 'message');
     }
 }

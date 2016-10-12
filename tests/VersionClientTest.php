@@ -4,6 +4,7 @@ namespace Cerpus\VersionClient\tests;
 
 use Cerpus\VersionClient\VersionData;
 use Cerpus\VersionClient\VersionClient;
+use Cerpus\VersionClient\interfaces\VersionDataInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -14,6 +15,14 @@ use Mockery as m;
 class VersionClientTest extends \PHPUnit_Framework_TestCase
 {
 
+    protected $mockConfig = [
+        'base-url' => 'http://version.local',
+    ];
+
+    protected $responseBodies = [
+        'get-version-successful' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[],"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
+    ];
+
     public function tearDown()
     {
         m::close();
@@ -23,7 +32,7 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
     private function mockAuthentication()
     {
         m::mock("alias:Cache")
-        ->shouldReceive('get')->once()->with(VersionClient::class . '::getToken-VersionToken')->andReturn("authenticated");
+            ->shouldReceive('get')->once()->with(VersionClient::class . '::getToken-VersionToken')->andReturn("authenticated");
     }
 
     private function mockLog()
@@ -46,7 +55,7 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
 
         $versionClient->method("getConfig")->willReturnArgument(0);
         $versionClient->method("verifyConfig")->willReturn(true);
-        $versionClient->method("getClient")->willReturnCallback(function(){
+        $versionClient->method("getClient")->willReturnCallback(function () {
 
             $createdData = new \stdClass();
             $createdData->id = '123-456-789';
@@ -91,7 +100,7 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
 
         $versionClient->method("getConfig")->willReturnArgument(0);
         $versionClient->method("verifyConfig")->willReturn(true);
-        $versionClient->method("getClient")->willReturnCallback(function(){
+        $versionClient->method("getClient")->willReturnCallback(function () {
 
             $responseError = new \stdClass();
             $responseError->code = "URL";
@@ -115,5 +124,48 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         $data = new VersionData(1, "invalidUrl", 1234321, "create", null);
         $this->assertFalse($versionClient->createVersion($data));
         $this->assertNull($versionClient->getVersionId());
+    }
+
+    public function testGetVersionSuccess()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+
+        $guzzleHandler = new MockHandler([
+            new Response(200, [], $this->responseBodies['get-version-successful']),
+        ]);
+        $stackHandler = HandlerStack::create($guzzleHandler);
+        $mockClient = new Client(['handler' => $stackHandler]);
+
+        $versionClient->method('getClient')->willReturn($mockClient);
+
+        $versionResult = $versionClient->getVersion('1234');
+//        'get-version-successful' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[],
+//          "createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
+
+        $this->assertNotFalse($versionResult);
+        $this->assertInstanceOf(VersionDataInterface::class, $versionResult);
+        $this->assertEquals('id1', $versionResult->getId());
+        $this->assertEquals('CONTENTAUTHOR', $versionResult->getExternalSystem());
+        $this->assertEquals('exref1', $versionResult->getExternalReference());
+        $this->assertEquals('http://ca.local/h5p/1', $versionResult->getExternalUrl());
+        $this->assertNull($versionResult->getParent());
+        $this->assertEquals('http://ca.local/h5p/1', $versionResult->getExternalUrl());
+        $this->assertTrue(is_array($versionResult->getChildren()));
+        $this->assertCount(0, $versionResult->getChildren());
+        $this->assertEquals('1', $versionResult->getCoreId());
+        $this->assertEquals('Testing', $versionResult->getVersionPurpose());
+        $this->assertEquals('reference', $versionResult->getOriginReference());
+        $this->assertEquals('CONTENTAUTHOR', $versionResult->getOriginSystem());
+        $this->assertEquals('user1', $versionResult->getUserId());
+
     }
 }

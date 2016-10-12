@@ -8,28 +8,35 @@ use Psr\Http\Message\UriInterface;
 
 class VersionData implements VersionDataInterface
 {
+    protected $id;
 
-    public $externalReference;
+    protected $externalReference;
 
     /** @var UriInterface */
-    public $externalUrl;
+    protected $externalUrl;
 
-    public $externalSystem;
+    protected $externalSystem;
 
-    public $originSystem;
+    protected $originSystem;
 
-    public $originId;
+    protected $originReference;
 
-    public $versionPurpose;
+    protected $originId;
 
-    public $userId;
+    protected $versionPurpose;
 
-    public $parent;
+    protected $userId;
 
-    public function __construct($id, $url, $userId, $versionPurpose, $parent)
+    protected $parent;
+
+    protected $children;
+
+    protected $coreId;
+
+    public function __construct($id = null, $url = '', $userId = null, $versionPurpose = '', $parent = null)
     {
         $this->externalReference = $id;
-        if( $url instanceof UriInterface){
+        if ($url instanceof UriInterface) {
             $this->externalUrl = $url;
         } else {
             $this->externalUrl = $url; //new Uri($url);
@@ -39,47 +46,223 @@ class VersionData implements VersionDataInterface
         $this->parent = $parent;
         $this->userId = $userId;
 
-        $this->externalSystem = "CONTENTAUTHOER"; //getenv("EXTERNAL_SYSTEM_NAME");
+        $this->externalSystem = "CONTENTAUTHOR"; //getenv("EXTERNAL_SYSTEM_NAME");
     }
 
-    public function setExternalSystem($system)
-    {
-        $this->system = $system;
-    }
-
-    public function getExternalSystem()
-    {
-        // TODO: Implement getExternalSystem() method.
-    }
-
+    /**
+     * @return null
+     */
     public function getExternalReference()
     {
-        // TODO: Implement getExternalReference() method.
+        return $this->externalReference;
     }
 
+    /**
+     * @param null $externalReference
+     * @return VersionData
+     */
+    public function setExternalReference($externalReference)
+    {
+        $this->externalReference = $externalReference;
+        return $this;
+    }
+
+    /**
+     * @return UriInterface
+     */
     public function getExternalUrl()
     {
-        // TODO: Implement getExternalUrl() method.
+        return $this->externalUrl;
     }
 
-    public function getVersionPurpose()
+    /**
+     * @param UriInterface $externalUrl
+     * @return VersionData
+     */
+    public function setExternalUrl($externalUrl)
     {
-        // TODO: Implement getVersionPurpose() method.
+        $this->externalUrl = $externalUrl;
+        return $this;
     }
 
-    public function getUserId()
+    /**
+     * @return string
+     */
+    public function getExternalSystem()
     {
-        // TODO: Implement getUserId() method.
+        return $this->externalSystem;
     }
 
+    /**
+     * @param string $externalSystem
+     * @return VersionData
+     */
+    public function setExternalSystem($externalSystem)
+    {
+        $this->externalSystem = $externalSystem;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getOriginSystem()
     {
-        // TODO: Implement getOriginSystem() method.
+        return $this->originSystem;
     }
 
+    /**
+     * @param mixed $originSystem
+     * @return VersionData
+     */
+    public function setOriginSystem($originSystem)
+    {
+        $this->originSystem = $originSystem;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getOriginReference()
     {
-        // TODO: Implement getOriginReference() method.
+        return $this->originReference;
     }
+
+    /**
+     * @param mixed $originReference
+     * @return VersionData
+     */
+    public function setOriginReference($originReference)
+    {
+        $this->originReference = $originReference;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOriginId()
+    {
+        return $this->originId;
+    }
+
+    /**
+     * @param mixed $originId
+     * @return VersionData
+     */
+    public function setOriginId($originId)
+    {
+        $this->originId = $originId;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersionPurpose()
+    {
+        return $this->versionPurpose;
+    }
+
+    /**
+     * @param string $versionPurpose
+     * @return VersionData
+     */
+    public function setVersionPurpose($versionPurpose)
+    {
+        $this->versionPurpose = $versionPurpose;
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    /**
+     * @param null $userId
+     * @return VersionData
+     */
+    public function setUserId($userId)
+    {
+        $this->userId = $userId;
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
+     * @param null $parent
+     * @return VersionData
+     */
+    public function setParent($parent)
+    {
+        $this->parent = $parent;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param mixed $id
+     * @return VersionData
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    /**
+     * @param mixed $children
+     * @return VersionData
+     */
+    public function setChildren($children)
+    {
+        $this->children = $children;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCoreId()
+    {
+        return $this->coreId;
+    }
+
+    /**
+     * @param mixed $coreId
+     */
+    public function setCoreId($coreId)
+    {
+        $this->coreId = $coreId;
+        return $this;
+    }
+
 
 }
