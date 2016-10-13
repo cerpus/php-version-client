@@ -29,7 +29,7 @@ class VersionData implements VersionDataInterface
 
     protected $parent;
 
-    protected $children;
+    protected $children = [];
 
     protected $coreId;
 
@@ -47,6 +47,28 @@ class VersionData implements VersionDataInterface
         $this->userId = $userId;
 
         $this->externalSystem = "CONTENTAUTHOR"; //getenv("EXTERNAL_SYSTEM_NAME");
+    }
+
+    /**
+     * @param $data
+     *
+     * @return VersionData
+     */
+    public function populate($data)
+    {
+        property_exists($data, 'externalReference') ? $this->setExternalReference($data->externalReference) : null;
+        property_exists($data, 'externalUrl') ? $this->setExternalUrl($data->externalUrl) : null;
+        property_exists($data, 'externalSystem') ? $this->setExternalSystem($data->externalSystem) : null;
+        property_exists($data, 'id') ? $this->setId($data->id) : null;
+        property_exists($data, 'parent') ? $this->setParent($data->parent) : null;
+        property_exists($data, 'children') ? $this->setChildren($data->children) : null;
+        property_exists($data, 'coreId') ? $this->setCoreId($data->coreId) : null;
+        property_exists($data, 'versionPurpose') ? $this->setVersionPurpose($data->versionPurpose) : null;
+        property_exists($data, 'originReference') ? $this->setOriginReference($data->originReference) : null;
+        property_exists($data, 'originSystem') ? $this->setOriginSystem($data->originSystem) : null;
+        property_exists($data, 'userId') ? $this->setUserId($data->userId) : null;
+
+        return $this;
     }
 
     /**
@@ -207,7 +229,12 @@ class VersionData implements VersionDataInterface
      */
     public function setParent($parent)
     {
-        $this->parent = $parent;
+        if (!is_null($parent)) {
+            $theParent = (new VersionData())->populate($parent);
+            $this->parent = $theParent;
+        }
+
+
         return $this;
     }
 
@@ -243,9 +270,27 @@ class VersionData implements VersionDataInterface
      */
     public function setChildren($children)
     {
-        $this->children = $children;
+        $this->children = [];
+        $this->addChildren($children);
+
         return $this;
     }
+
+    /**
+     * @param mixed $children
+     * @return VersionData
+     */
+    public function addChildren($children)
+    {
+        foreach ($children as $child) {
+            $theChild = new VersionData();
+            $theChild->populate($child);
+            $this->children[] = $theChild;
+        }
+
+        return $this;
+    }
+
 
     /**
      * @return mixed

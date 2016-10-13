@@ -21,6 +21,8 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
 
     protected $responseBodies = [
         'get-version-successful' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[],"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
+        'get-version-successful-with-children' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[{"id":"id2","externalSystem":"CONTENTAUTHOR","externalReference":"exref2","externalUrl":"http://ca.local/h5p/2","parent":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"children":[],"createdAt":1476307562772,"coreId":"2","versionPurpose":"Testing children","originReference":"reference 2","originSystem":"CONTENTAUTHOR","userId":"user1"}],"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
+        'get-version-will-fail-404' => '{"data":null,"errors":[{"code":null,"message":"The resource \'id3\' was not found.","field":null}],"type":"failure","message":"The request failed"}',
     ];
 
     public function tearDown()
@@ -148,8 +150,6 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         $versionClient->method('getClient')->willReturn($mockClient);
 
         $versionResult = $versionClient->getVersion('1234');
-//        'get-version-successful' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[],
-//          "createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
 
         $this->assertNotFalse($versionResult);
         $this->assertInstanceOf(VersionDataInterface::class, $versionResult);
@@ -168,4 +168,88 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('user1', $versionResult->getUserId());
 
     }
+
+    public function testGetVersionSuccessWithChildrenAndParentInThereSomewhere()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+
+        $guzzleHandler = new MockHandler([
+            new Response(200, [], $this->responseBodies['get-version-successful-with-children']),
+        ]);
+        $stackHandler = HandlerStack::create($guzzleHandler);
+        $mockClient = new Client(['handler' => $stackHandler]);
+
+        $versionClient->method('getClient')->willReturn($mockClient);
+
+        $versionResult = $versionClient->getVersion('1234');
+        $this->assertNotFalse($versionResult);
+        $this->assertInstanceOf(VersionDataInterface::class, $versionResult);
+
+        $this->assertEquals('id1', $versionResult->getId());
+        $this->assertEquals('CONTENTAUTHOR', $versionResult->getExternalSystem());
+        $this->assertEquals('exref1', $versionResult->getExternalReference());
+        $this->assertEquals('http://ca.local/h5p/1', $versionResult->getExternalUrl());
+        $this->assertNull($versionResult->getParent());
+        $this->assertEquals('http://ca.local/h5p/1', $versionResult->getExternalUrl());
+        $this->assertTrue(is_array($versionResult->getChildren()));
+        $this->assertCount(1, $versionResult->getChildren());
+        $this->assertEquals('1', $versionResult->getCoreId());
+        $this->assertEquals('Testing', $versionResult->getVersionPurpose());
+        $this->assertEquals('reference', $versionResult->getOriginReference());
+        $this->assertEquals('CONTENTAUTHOR', $versionResult->getOriginSystem());
+        $this->assertEquals('user1', $versionResult->getUserId());
+
+        $theChilds = $versionResult->getChildren();
+        $theChild = $theChilds[0];
+
+        $this->assertInstanceOf(VersionDataInterface::class, $theChild);
+        $this->assertEquals('id2', $theChild->getId());
+        $this->assertEquals('exref2', $theChild->getExternalReference());
+        $this->assertCount(0, $theChild->getChildren());
+
+        $this->assertInstanceOf(VersionDataInterface::class, $theChild->getParent());
+        $theChildParent = $theChild->getParent();
+        $this->assertEquals($versionResult->getCoreId(), $theChildParent->getCoreId());
+        $this->assertEquals($versionResult->getId(), $theChildParent->getId());
+
+    }
+
+    public function testGetVersionWillFail404()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+
+        $guzzleHandler = new MockHandler([
+            new Response(404, [], $this->responseBodies['get-version-will-fail-404']),
+        ]);
+        $stackHandler = HandlerStack::create($guzzleHandler);
+        $mockClient = new Client(['handler' => $stackHandler]);
+
+        $versionClient->method('getClient')->willReturn($mockClient);
+
+        $versionResult = $versionClient->getVersion('1234');
+
+        $this->assertFalse($versionResult);
+
+        $this->assertEquals(404, $versionClient->getErrorCode());
+
+    }
+
 }

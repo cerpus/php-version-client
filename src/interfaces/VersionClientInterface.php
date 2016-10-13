@@ -9,8 +9,6 @@ interface VersionClientInterface
 
     public function getVersion($versionId);
 
-    public function getVersionsFromOrigin($originSystem, $originReference);
-
     public function getVersionId();
 
 }

@@ -26,7 +26,9 @@ class VersionClient implements VersionClientInterface
 
     protected $responseData;
 
-    protected $error = null;
+    protected $errors = null;
+
+    protected $errorCode = null;
 
     protected $message = null;
 
@@ -103,7 +105,6 @@ class VersionClient implements VersionClientInterface
     {
         $token = $this->getToken();
         try {
-            $finalParams = [];
             $responseClient = $this->getClient();
 
             if ($token) {
@@ -115,7 +116,7 @@ class VersionClient implements VersionClientInterface
                 ];
 
                 $response = $responseClient->request($method, $endPoint, $finalParams);
-
+                
                 return $response->getBody()->getContents();
             } else {
                 \Log::error(__METHOD__ . ' Missing token.');
@@ -125,7 +126,8 @@ class VersionClient implements VersionClientInterface
         } catch (ClientException $clientException) {
             if ($clientException->hasResponse()) {
                 $error = $clientException->getResponse();
-                $this->error = json_decode($error->getBody()->getContents());
+                $this->errorCode = $error->getStatusCode();
+                $this->errors = json_decode($error->getBody()->getContents());
             }
             throw $clientException;
         }
@@ -144,6 +146,8 @@ class VersionClient implements VersionClientInterface
             $this->responseData = json_decode($responseStream);
             // Handle json decode error(s)?
         } catch (\Exception $exception) {
+            $this->errorCode = $exception->getCode();
+            $this->errors = $exception->getMessage();
             return false;
         }
 
@@ -152,53 +156,36 @@ class VersionClient implements VersionClientInterface
 
     public function getVersion($versionId)
     {
-        $versionData = false;
         try {
-            $endPoint = str_replace('%s', self::GET_VERSION_DATA, $versionId);
+            $endPoint = sprintf(self::GET_VERSION_DATA, $versionId);
             $responseStream = $this->doRequest($endPoint, [], "GET");
             $responseJson = json_decode($responseStream);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->error = json_last_error_msg();
                 return false;
             }
 
             if (!$this->verifyResponseJson($responseJson)) {
-                $this->message = "Error validating response json";
                 return false;
             }
-            $success = ($responseJson->type === 'success');
 
-            if (!$success) {
-                $this->error = $responseJson->errors;
+            if (!($responseJson->type === 'success')) {
+                $this->errorCode = 1;
+                $this->errors = $responseJson->errors;
                 $this->message = $responseJson->message;
                 return false;
             }
 
-            $versionData = new VersionData(); // Can we use the Laravel Service Container to resolve this?
+            $versionData = new VersionData(); // Can/Should we use the Laravel Service Container to resolve this?
             $receivedData = $responseJson->data;
-            $versionData->setExternalReference($receivedData->externalReference);
-            $versionData->setExternalUrl($receivedData->externalUrl);
-            $versionData->setExternalSystem($receivedData->externalSystem);
-            $versionData->setId($receivedData->id);
-            $versionData->setParent($receivedData->parent);
-            $versionData->setChildren($receivedData->children);
-            $versionData->setCoreId($receivedData->coreId);
-            $versionData->setVersionPurpose($receivedData->versionPurpose);
-            $versionData->setOriginReference($receivedData->originReference);
-            $versionData->setOriginSystem($receivedData->originSystem);
-            $versionData->setUserId($receivedData->userId);
+            $versionData->populate($receivedData);
 
         } catch (\Exception $e) {
-            $this->error = $e->getMessage();
+            $this->errorCode = $e->getCode();
+            $this->errors = $e->getMessage();
             return false;
         }
 
         return $versionData;
-    }
-
-    public function getVersionsFromOrigin($originSystem, $originReference)
-    {
-        // TODO: Implement getVersionsFromOrigin() method.
     }
 
     public function getVersionId()
@@ -211,7 +198,12 @@ class VersionClient implements VersionClientInterface
      */
     public function getError()
     {
-        return $this->error;
+        return $this->errors;
+    }
+
+    public function getErrorCode()
+    {
+        return $this->errorCode;
     }
 
     public function getMessage()
@@ -221,9 +213,16 @@ class VersionClient implements VersionClientInterface
 
     protected function verifyResponseJson($json)
     {
-        return property_exists($json, 'data')
-        && property_exists($json, 'errors')
-        && property_exists($json, 'type')
-        && property_exists($json, 'message');
+        $valid = property_exists($json, 'data')
+            && property_exists($json, 'errors')
+            && property_exists($json, 'type')
+            && property_exists($json, 'message');
+        if (!$valid) {
+            $this->errorCode = 1;
+            $this->errors = 'Invalid data format in response';
+        }
+        return $valid;
     }
+
+
 }
