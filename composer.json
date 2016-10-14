@@ -1,19 +1,29 @@
 {
-    "name": "cerpus/versionclient",
+    "name": "cerpus/version-client",
     "description": "Library to communicate with the versioning API",
+    "keywords": ["laravel", "Cerpus Versioning API Client"],
     "authors": [
         {
             "name": "Thomas Horn Sivertsen",
             "email": "thomass@cerpus.com"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {
         "guzzlehttp/guzzle": "^6.2"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^4.8",
+        "mockery/mockery": "0.9.*"
+    },
     "autoload": {
         "psr-4": {
-            "Cerpus\\VersionClient\\": "packages/cerpus/version-client/src"
+            "Cerpus\\VersionClient\\": "src/"
         }
+    },
+    "script": {
+        "post-package-install": [
+            "Cerpus\\VersionClient\\config\\Config::packageInstall"
+        ]
     }
 }
