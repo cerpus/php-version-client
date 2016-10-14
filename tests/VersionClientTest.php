@@ -65,12 +65,12 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
             $createdData->externalReference = 12345;
             $createdData->externalUrl = "http://test.test";
             $createdData->parent = null;
-            $createdData->children = null;
+            $createdData->children = [];
             $createdData->versionPurpose = "created";
             $createdData->userId = 123421;
 
             $respnseData = new \stdClass();
-            $respnseData->error = [];
+            $respnseData->errors = [];
             $respnseData->data = $createdData;
             $respnseData->type = "success";
             $respnseData->message = null;
@@ -84,8 +84,10 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         });
 
         $data = new VersionData(1, "http://test.test", 1234321, "create", null);
-        $this->assertTrue($versionClient->createVersion($data));
-        $this->assertEquals($versionClient->getVersionId(), "123-456-789");
+        $version = $versionClient->createVersion($data);
+
+        $this->assertInstanceOf(VersionDataInterface::class, $version);
+        $this->assertEquals($version->getId(), "123-456-789");
 
     }
 
@@ -110,7 +112,7 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
             $responseError->field = "externalUrl";
 
             $respnseData = new \stdClass();
-            $respnseData->error = [$responseError];
+            $respnseData->errors = [$responseError];
             $respnseData->data = [];
             $respnseData->type = "failure";
             $respnseData->message = "The request had invalid properties.";
@@ -124,8 +126,11 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         });
 
         $data = new VersionData(1, "invalidUrl", 1234321, "create", null);
-        $this->assertFalse($versionClient->createVersion($data));
-        $this->assertNull($versionClient->getVersionId());
+        $version = $versionClient->createVersion($data);
+
+        $this->assertFalse($version);
+        $this->assertEquals(400, $versionClient->getErrorCode());
+        $this->assertContains('Bad Request', $versionClient->getError());
     }
 
     public function testGetVersionSuccess()
@@ -247,7 +252,6 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
         $versionResult = $versionClient->getVersion('1234');
 
         $this->assertFalse($versionResult);
-
         $this->assertEquals(404, $versionClient->getErrorCode());
 
     }

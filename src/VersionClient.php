@@ -116,7 +116,7 @@ class VersionClient implements VersionClientInterface
                 ];
 
                 $response = $responseClient->request($method, $endPoint, $finalParams);
-                
+
                 return $response->getBody()->getContents();
             } else {
                 \Log::error(__METHOD__ . ' Missing token.');
@@ -134,8 +134,10 @@ class VersionClient implements VersionClientInterface
     }
 
     /**
+     * Create new version in API
+     *
      * @param VersionDataInterface $resourceData
-     * @return bool
+     * @return bool|VersionData
      */
     public function createVersion(VersionDataInterface $resourceData)
     {
@@ -143,42 +145,41 @@ class VersionClient implements VersionClientInterface
         try {
             /** @var Stream $responseStream */
             $responseStream = $this->doRequest(self::CREATE_VERSION, $resourceData, "POST");
-            $this->responseData = json_decode($responseStream);
-            // Handle json decode error(s)?
+
+            if(!$this->verifyResponse($responseStream)){
+                return false;
+            }
+
+            $versionData = new VersionData(); // Can/Should we use the Laravel Service Container to resolve this?
+            $versionData->populate($this->responseData->data);
         } catch (\Exception $exception) {
             $this->errorCode = $exception->getCode();
             $this->errors = $exception->getMessage();
             return false;
         }
 
-        return true;
+        return $versionData;
     }
 
+    /**
+     * Get version info
+     *
+     * @param $versionId
+     * @return bool|VersionData
+     */
     public function getVersion($versionId)
     {
         try {
             $endPoint = sprintf(self::GET_VERSION_DATA, $versionId);
             $responseStream = $this->doRequest($endPoint, [], "GET");
-            $responseJson = json_decode($responseStream);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return false;
-            }
 
-            if (!$this->verifyResponseJson($responseJson)) {
-                return false;
-            }
-
-            if (!($responseJson->type === 'success')) {
-                $this->errorCode = 1;
-                $this->errors = $responseJson->errors;
-                $this->message = $responseJson->message;
+            if(!$this->verifyResponse($responseStream)){
                 return false;
             }
 
             $versionData = new VersionData(); // Can/Should we use the Laravel Service Container to resolve this?
-            $receivedData = $responseJson->data;
+            $receivedData = $this->responseData->data;
             $versionData->populate($receivedData);
-
         } catch (\Exception $e) {
             $this->errorCode = $e->getCode();
             $this->errors = $e->getMessage();
@@ -186,6 +187,22 @@ class VersionClient implements VersionClientInterface
         }
 
         return $versionData;
+    }
+
+    protected function verifyResponse($responseStream)
+    {
+        $this->responseData = json_decode($responseStream);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->errorCode = json_last_error();
+            $this->errors[] = json_last_error_msg();
+            return false;
+        }
+
+        if (!$this->verifyResponseJson()) {
+            return false;
+        }
+
+        return true;
     }
 
     public function getVersionId()
@@ -211,8 +228,9 @@ class VersionClient implements VersionClientInterface
         return $this->message;
     }
 
-    protected function verifyResponseJson($json)
+    protected function verifyResponseJson()
     {
+        $json = $this->responseData;
         $valid = property_exists($json, 'data')
             && property_exists($json, 'errors')
             && property_exists($json, 'type')
