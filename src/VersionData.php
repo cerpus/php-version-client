@@ -61,7 +61,7 @@ class VersionData implements VersionDataInterface
         property_exists($data, 'externalSystem') ? $this->setExternalSystem($data->externalSystem) : null;
         property_exists($data, 'id') ? $this->setId($data->id) : null;
         property_exists($data, 'parent') ? $this->setParent($data->parent) : null;
-        property_exists($data, 'children') ? $this->setChildren($data->children) : null;
+        property_exists($data, 'children') ? $this->setChildren($data->children) : [];
         property_exists($data, 'coreId') ? $this->setCoreId($data->coreId) : null;
         property_exists($data, 'versionPurpose') ? $this->setVersionPurpose($data->versionPurpose) : null;
         property_exists($data, 'originReference') ? $this->setOriginReference($data->originReference) : null;
@@ -69,6 +69,41 @@ class VersionData implements VersionDataInterface
         property_exists($data, 'userId') ? $this->setUserId($data->userId) : null;
 
         return $this;
+    }
+
+    public function toArray()
+    {
+        $properties = [
+            'externalReference',
+            'externalUrl',
+            'externalSystem',
+            'id',
+            'parent',
+            'children',
+            'coreId',
+            'versionPurpose',
+            'originReference',
+            'originSystem',
+            'userId'
+        ];
+
+        $versionData = [];
+        foreach ($properties as $property) {
+            $versionData = $this->toArrayHelper($versionData, $property);
+        }
+
+        return $versionData;
+    }
+
+    private function toArrayHelper($theArray, $theProperty)
+    {
+        if (property_exists($this, $theProperty)) {
+            if (!empty($this->$theProperty)) {
+                $theArray[$theProperty] = $this->$theProperty;
+            }
+        }
+
+        return $theArray;
     }
 
     /**
@@ -271,7 +306,10 @@ class VersionData implements VersionDataInterface
     public function setChildren($children)
     {
         $this->children = [];
-        $this->addChildren($children);
+
+        if (is_array($children)) {
+            $this->addChildren($children);
+        }
 
         return $this;
     }

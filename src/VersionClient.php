@@ -12,7 +12,7 @@ class VersionClient implements VersionClientInterface
 {
 
     const CREATE_VERSION = "/v1/resources";
-    const GET_VERSION_DATA = "/v1/%s";
+    const GET_VERSION_DATA = "/v1/resources/%s";
     const GET_VERSION_DATA_FROM_ORIGIN = "/v1/origin/%s/%s";
 
     const AUTH_SERVICE = "/v1/oauth2/service";
@@ -61,7 +61,7 @@ class VersionClient implements VersionClientInterface
     private function getToken()
     {
         $tokenName = __METHOD__ . '-VersionToken';
-        $this->oauthToken = \Cache::get($tokenName);
+        $this->oauthToken = \Cache::get($tokenName . '1');
         if (is_null($this->oauthToken)) {
             try {
                 $licenseClient = new Client(['base_uri' => $this->versionServer]);
@@ -144,9 +144,10 @@ class VersionClient implements VersionClientInterface
         $this->resourceData = $resourceData;
         try {
             /** @var Stream $responseStream */
-            $responseStream = $this->doRequest(self::CREATE_VERSION, $resourceData, "POST");
+            $resourceArray = $resourceData->toArray();
+            $responseStream = $this->doRequest(self::CREATE_VERSION, $resourceArray, "POST");
 
-            if(!$this->verifyResponse($responseStream)){
+            if (!$this->verifyResponse($responseStream)) {
                 return false;
             }
 
@@ -173,7 +174,7 @@ class VersionClient implements VersionClientInterface
             $endPoint = sprintf(self::GET_VERSION_DATA, $versionId);
             $responseStream = $this->doRequest($endPoint, [], "GET");
 
-            if(!$this->verifyResponse($responseStream)){
+            if (!$this->verifyResponse($responseStream)) {
                 return false;
             }
 
