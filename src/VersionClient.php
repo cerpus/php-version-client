@@ -37,6 +37,7 @@ class VersionClient implements VersionClientInterface
         $this->oauthKey = is_null($key) ? $this->getConfig("versionClient.oauthkey") : $key; //$oauthKey;
         $this->oauthSecret = is_null($secret) ? $this->getConfig("versionClient.oauthsecret") : $secret; //$oauthSecret;
         $this->versionServer = is_null($server) ? $this->getConfig("versionClient.versionserver") : $server; //$oauthServer;
+
         $this->verifyConfig();
     }
 
