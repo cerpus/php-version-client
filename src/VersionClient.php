@@ -2,11 +2,11 @@
 
 namespace Cerpus\VersionClient;
 
-use Cerpus\VersionClient\interfaces\VersionClientInterface;
-use Cerpus\VersionClient\interfaces\VersionDataInterface;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Exception\ClientException;
+use Cerpus\VersionClient\interfaces\VersionDataInterface;
+use Cerpus\VersionClient\interfaces\VersionClientInterface;
 
 class VersionClient implements VersionClientInterface
 {

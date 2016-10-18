@@ -2,6 +2,7 @@
 
 namespace Cerpus\VersionClient\Providers;
 
+use Cerpus\VersionClient\VersionData;
 use Illuminate\Support\ServiceProvider;
 use Cerpus\VersionClient\VersionClient;
 
@@ -26,6 +27,10 @@ class VersioningServiceProvider extends ServiceProvider
     {
         $this->app->bind(VersionClient::class, function() {
             return new VersionClient();
+        });
+
+        $this->app->bind(VersionData::class, function() {
+            return new VersionData();
         });
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Cerpus\VersionClient;
 
-use Cerpus\VersionClient\interfaces\VersionDataInterface;
 use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\UriInterface;
+use Cerpus\VersionClient\interfaces\VersionDataInterface;
 
 class VersionData implements VersionDataInterface
 {
@@ -160,59 +160,6 @@ class VersionData implements VersionDataInterface
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getOriginSystem()
-    {
-        return $this->originSystem;
-    }
-
-    /**
-     * @param mixed $originSystem
-     * @return VersionData
-     */
-    public function setOriginSystem($originSystem)
-    {
-        $this->originSystem = $originSystem;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getOriginReference()
-    {
-        return $this->originReference;
-    }
-
-    /**
-     * @param mixed $originReference
-     * @return VersionData
-     */
-    public function setOriginReference($originReference)
-    {
-        $this->originReference = $originReference;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getOriginId()
-    {
-        return $this->originId;
-    }
-
-    /**
-     * @param mixed $originId
-     * @return VersionData
-     */
-    public function setOriginId($originId)
-    {
-        $this->originId = $originId;
-        return $this;
-    }
 
     /**
      * @return string
@@ -270,6 +217,12 @@ class VersionData implements VersionDataInterface
         }
 
 
+        return $this;
+    }
+
+    public function setParentId($parentId)
+    {
+        $this->parent = $parentId;
         return $this;
     }
 
@@ -347,5 +300,58 @@ class VersionData implements VersionDataInterface
         return $this;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getOriginSystem()
+    {
+        return $this->originSystem;
+    }
+
+    /**
+     * @param mixed $originSystem
+     * @return VersionData
+     */
+    public function setOriginSystem($originSystem)
+    {
+        $this->originSystem = $originSystem;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOriginReference()
+    {
+        return $this->originReference;
+    }
+
+    /**
+     * @param mixed $originReference
+     * @return VersionData
+     */
+    public function setOriginReference($originReference)
+    {
+        $this->originReference = $originReference;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOriginId()
+    {
+        return $this->originId;
+    }
+
+    /**
+     * @param mixed $originId
+     * @return VersionData
+     */
+    public function setOriginId($originId)
+    {
+        $this->originId = $originId;
+        return $this;
+    }
 
 }
