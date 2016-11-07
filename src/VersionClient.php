@@ -13,6 +13,7 @@ class VersionClient implements VersionClientInterface
 
     const CREATE_VERSION = "/v1/resources";
     const GET_VERSION_DATA = "/v1/resources/%s";
+    const GET_VERSION_LATEST_DATA = "/v1/resources/%s/latest";
     const GET_VERSION_DATA_FROM_ORIGIN = "/v1/origin/%s/%s";
 
     const AUTH_SERVICE = "/v1/oauth2/service";
@@ -187,6 +188,23 @@ class VersionClient implements VersionClientInterface
             $this->errors = $e->getMessage();
             return false;
         }
+
+        return $versionData;
+    }
+
+    public function latest($versionId)
+    {
+        $endPoint = sprintf(self::GET_VERSION_LATEST_DATA, $versionId);
+        $responseStream = $this->doRequest($endPoint, [], "GET");
+
+        if (!$this->verifyResponse($responseStream)) {
+            return false;
+        }
+
+        $receivedData = $this->responseData->data;
+
+        $versionData = app(VersionData::class);
+        $versionData->populate($receivedData);
 
         return $versionData;
     }
