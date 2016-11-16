@@ -46,7 +46,7 @@ class VersionData implements VersionDataInterface
         $this->parent = $parent;
         $this->userId = $userId;
 
-        $this->externalSystem = config('versionClient.system_name');
+        $this->externalSystem = config('app.site-name');
     }
 
     /**
