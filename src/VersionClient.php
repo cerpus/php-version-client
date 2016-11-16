@@ -63,7 +63,7 @@ class VersionClient implements VersionClientInterface
     private function getToken()
     {
         $tokenName = __METHOD__ . '-VersionToken';
-        $this->oauthToken = \Cache::get($tokenName . '1');
+        $this->oauthToken = \Cache::get($tokenName);
         if (is_null($this->oauthToken)) {
             try {
                 $licenseClient = new Client(['base_uri' => $this->versionServer]);
