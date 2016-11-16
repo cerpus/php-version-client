@@ -8,6 +8,13 @@ use Cerpus\VersionClient\interfaces\VersionDataInterface;
 
 class VersionData implements VersionDataInterface
 {
+    const INITIAL = 'Initial';
+    const CREATE = 'Create';
+    const UPDATE = 'Update';
+    const IMPORT = 'Import';
+    const COPY = 'Copy';
+
+
     protected $id;
 
     protected $externalReference;
@@ -33,6 +40,8 @@ class VersionData implements VersionDataInterface
 
     protected $coreId;
 
+    protected $createdAt;
+
     public function __construct($id = null, $url = '', $userId = null, $versionPurpose = '', $parent = null)
     {
         $this->externalReference = $id;
@@ -46,7 +55,9 @@ class VersionData implements VersionDataInterface
         $this->parent = $parent;
         $this->userId = $userId;
 
+        //Defaults
         $this->externalSystem = config('app.site-name');
+        $this->createdAt = time();
     }
 
     /**
@@ -67,6 +78,7 @@ class VersionData implements VersionDataInterface
         property_exists($data, 'originReference') ? $this->setOriginReference($data->originReference) : null;
         property_exists($data, 'originSystem') ? $this->setOriginSystem($data->originSystem) : null;
         property_exists($data, 'userId') ? $this->setUserId($data->userId) : null;
+        property_exists($data, 'createdAt') ? $this->setCreatedAt($data->createdAt) : null;
 
         return $this;
     }
@@ -84,7 +96,8 @@ class VersionData implements VersionDataInterface
             'versionPurpose',
             'originReference',
             'originSystem',
-            'userId'
+            'userId',
+//            'createdAt'
         ];
 
         $versionData = [];
@@ -351,6 +364,21 @@ class VersionData implements VersionDataInterface
     public function setOriginId($originId)
     {
         $this->originId = $originId;
+        return $this;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param int $createdAt timestamp
+     */
+    public function setCreatedAt($createdAt)
+    {
+        $this->createdAt = $createdAt;
+
         return $this;
     }
 

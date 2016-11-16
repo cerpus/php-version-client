@@ -12,4 +12,5 @@ interface VersionDataInterface
     public function getUserId();
     public function getOriginSystem();
     public function getOriginReference();
+    public function getCreatedAt();
 }
