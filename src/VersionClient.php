@@ -103,7 +103,7 @@ class VersionClient implements VersionClientInterface
         return new Client(['base_uri' => $this->versionServer]);
     }
 
-    private function doRequest($endPoint, $params = [], $method = 'GET')
+    private function doRequest($endPoint, $json = [], $method = 'GET')
     {
         $token = $this->getToken();
         try {
@@ -111,10 +111,10 @@ class VersionClient implements VersionClientInterface
 
             if ($token) {
                 $finalParams = [
-                    'form_params' => $params,
                     'headers' => [
                         'Authorization' => 'Bearer ' . $token
                     ],
+	                'json' => $json,
                 ];
 
                 $response = $responseClient->request($method, $endPoint, $finalParams);
@@ -135,14 +135,44 @@ class VersionClient implements VersionClientInterface
         }
     }
 
+	/**
+	 * Create new version in API
+	 *
+	 * @param VersionDataInterface $resourceData
+	 * @return bool|VersionData
+	 */
+	public function createVersion(VersionDataInterface $resourceData)
+	{
+		$this->resourceData = $resourceData;
+		try {
+			/** @var Stream $responseStream */
+			$resourceArray = $resourceData->toArray();
+			$responseStream = $this->doRequest(self::CREATE_VERSION, $resourceArray, "POST");
+
+			if (!$this->verifyResponse($responseStream)) {
+				return false;
+			}
+
+			$versionData = new VersionData(); // Can/Should we use the Laravel Service Container to resolve this?
+			$versionData->populate($this->responseData->data);
+		} catch (\Exception $exception) {
+			$this->errorCode = $exception->getCode();
+			$this->errors = $exception->getMessage();
+			return false;
+		}
+
+		return $versionData;
+	}
+
     /**
      * Create new version in API
      *
      * @param VersionDataInterface $resourceData
      * @return bool|VersionData
      */
-    public function createVersion(VersionDataInterface $resourceData)
+    public function initialVersion(VersionDataInterface $resourceData)
     {
+	    $resourceData->setVersionPurpose(VersionData::INITIAL);
         $this->resourceData = $resourceData;
         try {
             /** @var Stream $responseStream */

@@ -13,4 +13,14 @@ interface VersionDataInterface
     public function getOriginSystem();
     public function getOriginReference();
     public function getCreatedAt();
+	public function getParent();
+	public function setVersionPurpose($versionPurpose);
+	public function setCreatedAt($createdAt);
+	public function setOriginSystem($originSystem);
+	public function setOriginReference($originReference);
+	public function setExternalSystem($externalSystem);
+	public function setExternalReference($externalReference);
+	public function setExternalUrl($externalUrl);
+	public function setUserId($userId);
+	public function setParent($parent);
 }
