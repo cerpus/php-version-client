@@ -112,9 +112,9 @@ class VersionClient implements VersionClientInterface
             if ($token) {
                 $finalParams = [
                     'headers' => [
-                        'Authorization' => 'Bearer ' . $token
+                        'Authorization' => 'Bearer ' . $token,
                     ],
-	                'json' => $json,
+	                'form_params' => $json,
                 ];
 
                 $response = $responseClient->request($method, $endPoint, $finalParams);

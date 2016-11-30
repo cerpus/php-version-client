@@ -97,7 +97,7 @@ class VersionData implements VersionDataInterface
             'originReference',
             'originSystem',
             'userId',
-            'createdAt'
+       //     'createdAt'
         ];
 
         $versionData = [];
