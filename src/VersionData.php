@@ -13,6 +13,7 @@ class VersionData implements VersionDataInterface
     const UPDATE = 'Update';
     const IMPORT = 'Import';
     const COPY = 'Copy';
+    const UPGRADE = 'Upgrade';
 
 
     protected $id;
