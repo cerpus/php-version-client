@@ -2,13 +2,14 @@
 
 namespace Cerpus\VersionClient;
 
-function config($name, $default = null){
-	switch ($name){
-		case "app.site-name":
-			return "ContentAuthorUnitTest";
-		default:
-			return $default;
-	}
+function config($name, $default = null)
+{
+    switch ($name) {
+        case "app.site-name":
+            return "ContentAuthorUnitTest";
+        default:
+            return $default;
+    }
 }
 
 namespace Cerpus\VersionClient\tests;
@@ -80,15 +81,15 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
             $createdData->versionPurpose = "created";
             $createdData->userId = 123421;
 
-            $respnseData = new \stdClass();
-            $respnseData->errors = [];
-            $respnseData->data = $createdData;
-            $respnseData->type = "success";
-            $respnseData->message = null;
+            $responseData = new \stdClass();
+            $responseData->errors = [];
+            $responseData->data = $createdData;
+            $responseData->type = "success";
+            $responseData->message = null;
 
 
             $clientRequest = new MockHandler([
-                new Response(201, ["Content-Type" => "application/json"], json_encode($respnseData))
+                new Response(201, ["Content-Type" => "application/json"], json_encode($responseData))
             ]);
             $handler = HandlerStack::create($clientRequest);
             return new Client(['handler' => $handler]);
@@ -122,15 +123,15 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
             $responseError->message = "must be a valid URL, current value is 'qatesting.test/hello'";
             $responseError->field = "externalUrl";
 
-            $respnseData = new \stdClass();
-            $respnseData->errors = [$responseError];
-            $respnseData->data = [];
-            $respnseData->type = "failure";
-            $respnseData->message = "The request had invalid properties.";
+            $responseData = new \stdClass();
+            $responseData->errors = [$responseError];
+            $responseData->data = [];
+            $responseData->type = "failure";
+            $responseData->message = "The request had invalid properties.";
 
 
             $clientRequest = new MockHandler([
-                new Response(400, ["Content-Type" => "application/json"], json_encode($respnseData))
+                new Response(400, ["Content-Type" => "application/json"], json_encode($responseData))
             ]);
             $handler = HandlerStack::create($clientRequest);
             return new Client(['handler' => $handler]);
@@ -267,54 +268,55 @@ class VersionClientTest extends \PHPUnit_Framework_TestCase
 
     }
 
-	/** @test */
-	public function createInitialVersion()
-	{
-		$this->mockAuthentication();
-		$this->mockLog();
+    /** @test */
+    public function createInitialVersion()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
 
-		/** @var VersionClient $versionClient */
-		$versionClient = $this->getMockBuilder(VersionClient::class)
-		                      ->setMethods(["getConfig", "getClient", "verifyConfig"])
-		                      ->getMock();
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
 
-		$createdAt = new \DateTime();
+        $createdAt = new \DateTime();
 
-		$versionClient->method("getConfig")->willReturnArgument(0);
-		$versionClient->method("verifyConfig")->willReturn(true);
-		$versionClient->method("getClient")->willReturnCallback(function () use ($createdAt) {
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+        $versionClient->method("getClient")->willReturnCallback(function () use ($createdAt) {
 
-			$createdData = new \stdClass();
-			$createdData->id = '987-654-321';
-			$createdData->externalSystem = "UnitTest";
-			$createdData->externalReference = 12345;
-			$createdData->externalUrl = "http://test.test";
-			$createdData->parent = null;
-			$createdData->children = [];
-			$createdData->versionPurpose = VersionData::INITIAL;
-			$createdData->userId = 123421;
-			$createdData->createdAt = $createdAt->getTimestamp();
+            $createdData = new \stdClass();
+            $createdData->id = '987-654-321';
+            $createdData->externalSystem = "UnitTest";
+            $createdData->externalReference = 12345;
+            $createdData->externalUrl = "http://test.test";
+            $createdData->parent = null;
+            $createdData->children = [];
+            $createdData->versionPurpose = VersionData::INITIAL;
+            $createdData->userId = 123421;
+            $createdData->createdAt = $createdAt->getTimestamp();
 
-			$respnseData = new \stdClass();
-			$respnseData->errors = [];
-			$respnseData->data = $createdData;
-			$respnseData->type = "success";
-			$respnseData->message = null;
+            $responseData = new \stdClass();
+            $responseData->errors = [];
+            $responseData->data = $createdData;
+            $responseData->type = "success";
+            $responseData->message = null;
 
 
-			$clientRequest = new MockHandler([
-				new Response(201, ["Content-Type" => "application/json"], json_encode($respnseData))
-			]);
-			$handler = HandlerStack::create($clientRequest);
-			return new Client(['handler' => $handler]);
-		});
+            $clientRequest = new MockHandler([
+                new Response(201, ["Content-Type" => "application/json"], json_encode($responseData))
+            ]);
+            $handler = HandlerStack::create($clientRequest);
+            return new Client(['handler' => $handler]);
+        });
 
-		$data = new VersionData(1, "http://test.test", 1234321, VersionData::INITIAL, null);
-		$version = $versionClient->initialVersion($data);
+        $data = new VersionData(1, "http://test.test", 1234321, VersionData::INITIAL, null);
+        $version = $versionClient->initialVersion($data);
 
-		$this->assertInstanceOf(VersionDataInterface::class, $version);
-		$this->assertEquals($version->getId(), "987-654-321");
-		$this->assertEquals($version->getCreatedAt(), $createdAt->getTimestamp());
-		$this->assertEquals($version->getVersionPurpose(), "Initial");
-	}
+        $this->assertInstanceOf(VersionDataInterface::class, $version);
+        $this->assertEquals($version->getId(), "987-654-321");
+        $this->assertEquals($version->getCreatedAt(), $createdAt->getTimestamp());
+        $this->assertEquals($version->getVersionPurpose(), "Initial");
+    }
+
 }
