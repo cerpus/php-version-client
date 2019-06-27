@@ -24,7 +24,7 @@ use GuzzleHttp\Psr7\Response;
 use Mockery as m;
 
 
-class VersionClientTest extends \PHPUnit_Framework_TestCase
+class VersionClientTest extends \PHPUnit\Framework\TestCase
 {
 
     protected $mockConfig = [
