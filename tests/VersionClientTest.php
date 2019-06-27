@@ -35,6 +35,8 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         'get-version-successful' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[],"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
         'get-version-successful-with-children' => '{"data":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"children":[{"id":"id2","externalSystem":"CONTENTAUTHOR","externalReference":"exref2","externalUrl":"http://ca.local/h5p/2","parent":{"id":"id1","externalSystem":"CONTENTAUTHOR","externalReference":"exref1","externalUrl":"http://ca.local/h5p/1","parent":null,"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"children":[],"createdAt":1476307562772,"coreId":"2","versionPurpose":"Testing children","originReference":"reference 2","originSystem":"CONTENTAUTHOR","userId":"user1"}],"createdAt":1476299644126,"coreId":"1","versionPurpose":"Testing","originReference":"reference","originSystem":"CONTENTAUTHOR","userId":"user1"},"errors":[],"type":"success","message":null}',
         'get-version-will-fail-404' => '{"data":null,"errors":[{"code":null,"message":"The resource \'id3\' was not found.","field":null}],"type":"failure","message":"The request failed"}',
+        'get-version-with-linear-false' => '{"data":{"id":null,"externalSystem":"ValidExternalSystem","externalReference":"validExternalId","externalUrl":"http://test.me","children":[],"createdAt":null,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false,"parent":null},"errors":[],"type":"success","message":null}',
+        'get-version-with-linear-true' => '{"data":{"id":null,"externalSystem":"ValidExternalSystem","externalReference":"validExternalId","externalUrl":"http://test.me","children":[],"createdAt":null,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":true,"parent":null},"errors":[],"type":"success","message":null}',
     ];
 
     public function tearDown()
@@ -53,6 +55,26 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
     {
         m::mock("alias:Log")
             ->shouldReceive('error')->andReturn("logged");
+    }
+
+    /**
+     * @test
+     */
+    public function linearVersioningFalse() {
+        $versionData = new VersionData();
+        $versionData->setLinearVersioning(false);
+        $arrayData = $versionData->toArray();
+        $this->assertEquals(false, $arrayData['linearVersioning']);
+    }
+
+    /**
+     * @test
+     */
+    public function linearVersioningTrue() {
+        $versionData = new VersionData();
+        $versionData->setLinearVersioning(true);
+        $arrayData = $versionData->toArray();
+        $this->assertEquals(true, $arrayData['linearVersioning']);
     }
 
     /**
@@ -183,6 +205,79 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('reference', $versionResult->getOriginReference());
         $this->assertEquals('CONTENTAUTHOR', $versionResult->getOriginSystem());
         $this->assertEquals('user1', $versionResult->getUserId());
+
+    }
+
+    public function testGetVersionWithLinearFalse()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+
+        $guzzleHandler = new MockHandler([
+            new Response(200, [], $this->responseBodies['get-version-with-linear-false']),
+        ]);
+        $stackHandler = HandlerStack::create($guzzleHandler);
+        $mockClient = new Client(['handler' => $stackHandler]);
+
+        $versionClient->method('getClient')->willReturn($mockClient);
+
+        $versionResult = $versionClient->getVersion('1234');
+
+        $this->assertNotFalse($versionResult);
+        $this->assertInstanceOf(VersionDataInterface::class, $versionResult);
+        $this->assertFalse($versionResult->isLinearVersioning());
+        $this->assertEquals('ValidExternalSystem', $versionResult->getExternalSystem());
+        $this->assertEquals('validExternalId', $versionResult->getExternalReference());
+        $this->assertEquals('http://test.me', $versionResult->getExternalUrl());
+        $this->assertNull($versionResult->getParent());
+        $this->assertTrue(is_array($versionResult->getChildren()));
+        $this->assertCount(0, $versionResult->getChildren());
+        $this->assertEquals('create', $versionResult->getVersionPurpose());
+        $this->assertFalse($versionResult->isLinearVersioning());
+
+    }
+
+    public function testGetVersionWithLinearTrue()
+    {
+        $this->mockAuthentication();
+        $this->mockLog();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+
+        $guzzleHandler = new MockHandler([
+            new Response(200, [], $this->responseBodies['get-version-with-linear-true']),
+        ]);
+        $stackHandler = HandlerStack::create($guzzleHandler);
+        $mockClient = new Client(['handler' => $stackHandler]);
+
+        $versionClient->method('getClient')->willReturn($mockClient);
+
+        $versionResult = $versionClient->getVersion('1234');
+
+        $this->assertNotFalse($versionResult);
+        $this->assertInstanceOf(VersionDataInterface::class, $versionResult);
+        $this->assertTrue($versionResult->isLinearVersioning());
+        $this->assertEquals('ValidExternalSystem', $versionResult->getExternalSystem());
+        $this->assertEquals('validExternalId', $versionResult->getExternalReference());
+        $this->assertEquals('http://test.me', $versionResult->getExternalUrl());
+        $this->assertNull($versionResult->getParent());
+        $this->assertTrue(is_array($versionResult->getChildren()));
+        $this->assertCount(0, $versionResult->getChildren());
+        $this->assertEquals('create', $versionResult->getVersionPurpose());
 
     }
 
