@@ -14,6 +14,7 @@ function config($name, $default = null)
 
 namespace Cerpus\VersionClient\tests;
 
+use Cerpus\VersionClient\exception\LinearVersioningException;
 use Cerpus\VersionClient\VersionData;
 use Cerpus\VersionClient\VersionClient;
 use Cerpus\VersionClient\interfaces\VersionDataInterface;
@@ -37,6 +38,7 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         'get-version-will-fail-404' => '{"data":null,"errors":[{"code":null,"message":"The resource \'id3\' was not found.","field":null}],"type":"failure","message":"The request failed"}',
         'get-version-with-linear-false' => '{"data":{"id":null,"externalSystem":"ValidExternalSystem","externalReference":"validExternalId","externalUrl":"http://test.me","children":[],"createdAt":null,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false,"parent":null},"errors":[],"type":"success","message":null}',
         'get-version-with-linear-true' => '{"data":{"id":null,"externalSystem":"ValidExternalSystem","externalReference":"validExternalId","externalUrl":"http://test.me","children":[],"createdAt":null,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":true,"parent":null},"errors":[],"type":"success","message":null}',
+        'create-version-409-linear' => '{"requestedParent":{"id":"972bd92d-0cfb-4968-88a6-b80b26cf527c","externalSystem":"ContentAuthor","externalReference":"1","externalUrl":null,"createdAt":1561708536566,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false},"leafs":[{"id":"3fc33e60-6966-4feb-9a6d-eeda3c93f021","externalSystem":"ContentAuthor","externalReference":"1","externalUrl":null,"children":[],"createdAt":1561708536567,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false}],"error":"Linear versioning constraint violation"}'
     ];
 
     public function tearDown()
@@ -123,6 +125,43 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         $this->assertInstanceOf(VersionDataInterface::class, $version);
         $this->assertEquals($version->getId(), "123-456-789");
 
+    }
+
+    /**
+     * @test
+     */
+    public function createVersionWithLinearVersioningError()
+    {
+        $this->mockAuthentication();
+
+        /** @var VersionClient $versionClient */
+        $versionClient = $this->getMockBuilder(VersionClient::class)
+            ->setMethods(["getConfig", "getClient", "verifyConfig"])
+            ->getMock();
+
+        $versionClient->method("getConfig")->willReturnArgument(0);
+        $versionClient->method("verifyConfig")->willReturn(true);
+        $versionClient->method("getClient")->willReturnCallback(function () {
+            $clientRequest = new MockHandler([
+                new Response(409, ["Content-Type" => "application/json"], $this->responseBodies['create-version-409-linear'])
+            ]);
+            $handler = HandlerStack::create($clientRequest);
+            return new Client(['handler' => $handler]);
+        });
+
+        $data = new VersionData(1, "http://test.test", 1234321, "create", null);
+        try {
+            $versionClient->createVersion($data);
+
+            $this->fail('Expected exception throw');
+        } catch (LinearVersioningException $e) {
+            $requestedParent = $e->getRequestedParent();
+            $leafs = $e->getLeafNodes();
+            $this->assertNotNull($requestedParent);
+            $this->assertNotNull($leafs);
+            $this->assertEquals('972bd92d-0cfb-4968-88a6-b80b26cf527c', $requestedParent->getId());
+            $this->assertEquals('3fc33e60-6966-4feb-9a6d-eeda3c93f021', $leafs[0]->getId());
+        }
     }
 
     /** @test */
