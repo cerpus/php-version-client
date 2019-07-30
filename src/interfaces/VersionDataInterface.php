@@ -14,6 +14,7 @@ interface VersionDataInterface
     public function getOriginReference();
     public function getCreatedAt();
 	public function getParent();
+	public function isLinearVersioning();
 	public function setVersionPurpose($versionPurpose);
 	public function setCreatedAt($createdAt);
 	public function setOriginSystem($originSystem);

@@ -2,6 +2,7 @@
 
 namespace Cerpus\VersionClient;
 
+use Cerpus\VersionClient\exception\LinearVersioningException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Exception\ClientException;
@@ -135,19 +136,34 @@ class VersionClient implements VersionClientInterface
         }
     }
 
-	/**
-	 * Create new version in API
-	 *
-	 * @param VersionDataInterface $resourceData
-	 * @return bool|VersionData
-	 */
+    /**
+     * Create new version in API
+     *
+     * @param VersionDataInterface $resourceData
+     * @return bool|VersionData
+     * @throws LinearVersioningException
+     */
 	public function createVersion(VersionDataInterface $resourceData)
 	{
 		$this->resourceData = $resourceData;
 		try {
 			/** @var Stream $responseStream */
 			$resourceArray = $resourceData->toArray();
-			$responseStream = $this->doRequest(self::CREATE_VERSION, $resourceArray, "POST");
+			try {
+                $responseStream = $this->doRequest(self::CREATE_VERSION, $resourceArray, "POST");
+            } catch (ClientException $e) {
+			    if ($this->errorCode == 409 && $this->errors && isset($this->errors->requestedParent) && isset($this->errors->leafs)) {
+                    $parent = new VersionData();
+                    $parent->populate($this->errors->requestedParent);
+                    $leafs = array_map(function ($leafData) {
+                        $leaf = new VersionData();
+                        $leaf->populate($leafData);
+                        return $leaf;
+                    }, $this->errors->leafs);
+                    throw new LinearVersioningException($parent, $leafs);
+                }
+			    throw $e;
+            }
 
 			if (!$this->verifyResponse($responseStream)) {
 				return false;
@@ -156,6 +172,9 @@ class VersionClient implements VersionClientInterface
 			$versionData = new VersionData(); // Can/Should we use the Laravel Service Container to resolve this?
 			$versionData->populate($this->responseData->data);
 		} catch (\Exception $exception) {
+		    if ($exception instanceof LinearVersioningException) {
+		        throw $exception;
+            }
 			$this->errorCode = $exception->getCode();
 			$this->errors = $exception->getMessage();
 			return false;

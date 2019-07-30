@@ -43,6 +43,8 @@ class VersionData implements VersionDataInterface
 
     protected $createdAt;
 
+    protected $linearVersioning;
+
     public function __construct($id = null, $url = '', $userId = null, $versionPurpose = '', $parent = null)
     {
         $this->externalReference = $id;
@@ -80,6 +82,7 @@ class VersionData implements VersionDataInterface
         property_exists($data, 'originSystem') ? $this->setOriginSystem($data->originSystem) : null;
         property_exists($data, 'userId') ? $this->setUserId($data->userId) : null;
         property_exists($data, 'createdAt') ? $this->setCreatedAt($data->createdAt) : null;
+        property_exists($data, 'linearVersioning') ? $this->setLinearVersioning($data->linearVersioning) : null;
 
         return $this;
     }
@@ -98,6 +101,7 @@ class VersionData implements VersionDataInterface
             'originReference',
             'originSystem',
             'userId',
+            'linearVersioning'
        //     'createdAt'
         ];
 
@@ -112,7 +116,7 @@ class VersionData implements VersionDataInterface
     private function toArrayHelper($theArray, $theProperty)
     {
         if (property_exists($this, $theProperty)) {
-            if (!empty($this->$theProperty)) {
+            if (!empty($this->$theProperty) || $this->$theProperty === false) {
                 $theArray[$theProperty] = $this->$theProperty;
             }
         }
@@ -381,6 +385,22 @@ class VersionData implements VersionDataInterface
         $this->createdAt = $createdAt;
 
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isLinearVersioning()
+    {
+        return isset($this->linearVersioning) && $this->linearVersioning !== null && $this->linearVersioning;
+    }
+
+    /**
+     * @param boolean $linearVersioning
+     */
+    public function setLinearVersioning($linearVersioning)
+    {
+        $this->linearVersioning = $linearVersioning;
     }
 
 }
