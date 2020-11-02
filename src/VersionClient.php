@@ -17,9 +17,6 @@ class VersionClient implements VersionClientInterface
     const GET_VERSION_LATEST_DATA = "/v1/resources/%s/latest";
     const GET_VERSION_DATA_FROM_ORIGIN = "/v1/origin/%s/%s";
 
-    const AUTH_SERVICE = "/v1/oauth2/service";
-    const AUTH_TOKEN = "/oauth/token";
-
     protected $oauthToken;
     protected $oauthKey, $oauthSecret;
 
@@ -36,67 +33,22 @@ class VersionClient implements VersionClientInterface
 
     public function __construct($key = null, $secret = null, $server = null)
     {
-        $this->oauthKey = is_null($key) ? $this->getConfig("versionClient.oauthkey") : $key; //$oauthKey;
-        $this->oauthSecret = is_null($secret) ? $this->getConfig("versionClient.oauthsecret") : $secret; //$oauthSecret;
         $this->versionServer = is_null($server) ? $this->getConfig("versionClient.versionserver") : $server; //$oauthServer;
-
         $this->verifyConfig();
     }
 
     public function getConfig($key)
     {
-        return config($key);
+        return config($key, "http://versioningapi:8080");
     }
 
     public function verifyConfig()
     {
-        foreach (["oauthKey", "oauthSecret", "versionServer"] as $key) {
+        foreach (["versionServer"] as $key) {
             if (empty($this->$key)) {
                 throw new \Exception("Setting '$key' is missing or empty. Aborting");
             }
         }
-    }
-
-    /**
-     * Get token to talk to license server
-     * @return bool|string false on failure, token otherwise
-     */
-    private function getToken()
-    {
-        $tokenName = __METHOD__ . '-VersionToken';
-        $this->oauthToken = \Cache::get($tokenName);
-        if (is_null($this->oauthToken)) {
-            try {
-                $licenseClient = new Client(['base_uri' => $this->versionServer]);
-                $authResponse = $licenseClient->get(self::AUTH_SERVICE);
-                $authJson = json_decode($authResponse->getBody());
-                if (is_object($authJson) && property_exists($authJson, "url")) {
-                    $authUrl = $authJson->url;
-                } else {
-                    $authUrl = current($authJson);
-                }
-
-
-                $authClient = new Client(['base_uri' => $authUrl]);
-                $authResponse = $authClient->request('POST', self::AUTH_TOKEN, [
-                    'auth' => [
-                        $this->oauthKey,
-                        $this->oauthSecret
-                    ],
-                    'form_params' => [
-                        'grant_type' => 'client_credentials'
-                    ],
-                ]);
-                $oauthJson = json_decode($authResponse->getBody());
-                $this->oauthToken = $oauthJson->access_token;
-                \Cache::put($tokenName, $this->oauthToken, 3);
-            } catch (\Exception $e) {
-                \Log::error(__METHOD__ . ': Unable to get token: URL: ' . $authUrl . '. Wrong key/secret?');
-                return false;
-            }
-        }
-
-        return $this->oauthToken;
     }
 
     protected function getClient()
@@ -106,26 +58,10 @@ class VersionClient implements VersionClientInterface
 
     private function doRequest($endPoint, $json = [], $method = 'GET')
     {
-        $token = $this->getToken();
         try {
             $responseClient = $this->getClient();
 
-            if ($token) {
-                $finalParams = [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $token,
-                    ],
-	                'form_params' => $json,
-                ];
-
-                $response = $responseClient->request($method, $endPoint, $finalParams);
-
-                return $response->getBody()->getContents();
-            } else {
-                \Log::error(__METHOD__ . ' Missing token.');
-
-                return false;
-            }
+            return $responseClient->request($method, $endPoint, [ 'form_params' => $json ])->getBody()->getContents();
         } catch (ClientException $clientException) {
             if ($clientException->hasResponse()) {
                 $error = $clientException->getResponse();

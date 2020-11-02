@@ -47,12 +47,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         parent::tearDown();
     }
 
-    private function mockAuthentication()
-    {
-        m::mock("alias:Cache")
-            ->shouldReceive('get')->once()->with(VersionClient::class . '::getToken-VersionToken')->andReturn("authenticated");
-    }
-
     private function mockLog()
     {
         m::mock("alias:Log")
@@ -84,8 +78,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
      */
     public function createVersion()
     {
-        $this->mockAuthentication();
-
         /** @var VersionClient $versionClient */
         $versionClient = $this->getMockBuilder(VersionClient::class)
             ->setMethods(["getConfig", "getClient", "verifyConfig"])
@@ -132,8 +124,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
      */
     public function createVersionWithLinearVersioningError()
     {
-        $this->mockAuthentication();
-
         /** @var VersionClient $versionClient */
         $versionClient = $this->getMockBuilder(VersionClient::class)
             ->setMethods(["getConfig", "getClient", "verifyConfig"])
@@ -167,7 +157,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
     /** @test */
     public function createVersionWithErrors()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -208,7 +197,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
     public function testGetVersionSuccess()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -249,7 +237,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
     public function testGetVersionWithLinearFalse()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -286,7 +273,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
     public function testGetVersionWithLinearTrue()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -322,7 +308,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
     public function testGetVersionSuccessWithChildrenAndParentInThereSomewhere()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -376,7 +361,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
     public function testGetVersionWillFail404()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
@@ -405,7 +389,6 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
     /** @test */
     public function createInitialVersion()
     {
-        $this->mockAuthentication();
         $this->mockLog();
 
         /** @var VersionClient $versionClient */
