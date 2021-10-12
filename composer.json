@@ -2,6 +2,7 @@
     "name": "cerpus/version-client",
     "description": "Library to communicate with the versioning API",
     "keywords": ["laravel", "Cerpus Versioning API Client"],
+    "license": "GPL-3.0-only",
     "authors": [
         {
             "name": "Thomas Horn Sivertsen",
@@ -22,7 +23,7 @@
             "Cerpus\\VersionClient\\": "src/"
         }
     },
-    "script": {
+    "scripts": {
         "post-package-install": [
             "Cerpus\\VersionClient\\config\\Config::packageInstall"
         ]
