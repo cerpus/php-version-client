@@ -41,7 +41,7 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
         'create-version-409-linear' => '{"requestedParent":{"id":"972bd92d-0cfb-4968-88a6-b80b26cf527c","externalSystem":"ContentAuthor","externalReference":"1","externalUrl":null,"createdAt":1561708536566,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false},"leafs":[{"id":"3fc33e60-6966-4feb-9a6d-eeda3c93f021","externalSystem":"ContentAuthor","externalReference":"1","externalUrl":null,"children":[],"createdAt":1561708536567,"coreId":null,"versionPurpose":"create","originReference":null,"originSystem":null,"userId":null,"linearVersioning":false}],"error":"Linear versioning constraint violation"}'
     ];
 
-    public function tearDown()
+    public function tearDown(): void
     {
         m::close();
         parent::tearDown();
@@ -192,7 +192,7 @@ class VersionClientTest extends \PHPUnit\Framework\TestCase
 
         $this->assertFalse($version);
         $this->assertEquals(400, $versionClient->getErrorCode());
-        $this->assertContains('Bad Request', $versionClient->getError());
+        $this->assertStringContainsString('Bad Request', $versionClient->getError());
     }
 
     public function testGetVersionSuccess()
