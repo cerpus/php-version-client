@@ -23,10 +23,5 @@
         "psr-4": {
             "Cerpus\\VersionClient\\": "src/"
         }
-    },
-    "scripts": {
-        "post-package-install": [
-            "Cerpus\\VersionClient\\config\\Config::packageInstall"
-        ]
     }
 }
